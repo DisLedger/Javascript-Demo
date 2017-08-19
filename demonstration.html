@@ -1,0 +1,534 @@
+<!DOCTYPE html> <html lang="en">
+
+<head>
+
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DisLedger&reg; - Distributed Concurrence Ledger</title>
+
+<!-- CSS -->
+<!-- Copyright 2017 DisLedger Ltd. patent pending -->
+<link rel="stylesheet"
+	href="http://fonts.googleapis.com/css?family=Roboto:400,100,300,500">
+<link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css">
+<link rel="stylesheet"
+	href="assets/font-awesome/css/font-awesome.min.css">
+<link rel="stylesheet" href="assets/css/form-elements.css">
+<link rel="stylesheet" href="assets/css/style.css">
+
+<!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+<!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+<!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+
+
+</head>
+<script src="assets/js/sha3.js"></script>
+<script>
+	var transaction1_hash = null;
+	var transaction2_hash = null;
+	var seed_Time = 0.00000000;	
+			seed_Time = Date.now();
+			seed_string = seed_Time.toString();
+			var sha256 = new jsSHA('SHA3-256', 'TEXT');
+			sha256.update(seed_string);
+			transaction1_hash = sha256.getHash("HEX");
+
+	transaction2_hash = transaction1_hash;
+
+    var counterpartyAB_Sum = {};
+	var counterpartyAB1_hash = null;
+	var counterpartyAB2_hash = null;
+	var counterpartyAB1 = [];
+	var counterpartyAB2 = [];
+    var beginning_Time = 0.00000000;
+    var ending_Time = 0.00000000;
+	var counterPartyAC = {
+	  "AAPL" : 20000,
+	  "GOOGL": 15000,
+	  "IBM"	 : 25000,
+	  "SAP"	 : 35000,
+	  "USD"	 : 1000000000,
+	  "EUR"	 : 3000000000,
+	  "GBP"	 : 2000000000
+	}
+	var counterPartyAD = {
+	  "AAPL" : 25000,
+	  "GOOGL"	: 10000,
+	  "IBM"	: 20000,
+	  "SAP"	: 40000,
+	  "USD"	: 1500000000,
+	  "EUR"	: 3500000000,
+	  "GBP"	: 5000000000
+	}
+	
+	function process_data_entry()
+	{
+
+		var quantity = parseInt($("#f1-quantity").val());
+		var asset = $("#f1-asset option:selected").text();
+		var currency = $("#f1-currency option:selected").text();
+		var assetVal = $("#f1-asset option:selected").val();
+		var currencyVal = $("#f1-currency option:selected").val();
+		var total_value = parseInt($("#f1-total-value").val());
+		var stock = document.querySelector('input[name="buy-sell"]:checked').value;
+		
+		if(quantity == "" || total_value == "" || assetVal == "" || assetVal == 0 || assetVal == "0" || currencyVal == 0 || currencyVal == "0"){
+		   console.log("Validation Error");	
+		}
+		else{
+
+			beginning_Time = Date.now()
+for (i=0; i < 1000; i++) { 
+			//for transactions array
+			if(stock == "Buy"){
+				transaction1 = [quantity+(i*1), asset, -total_value, currency, transaction1_hash];
+				transaction2 = [quantity+(i*1), asset, -total_value, currency, transaction2_hash];
+			}
+			else{
+				transaction1 = [-quantity-(i*1), asset, total_value, currency, transaction1_hash];
+				transaction2 = [-quantity-(i*1), asset, total_value, currency, transaction2_hash];
+			}
+			
+			transaction1_string = transaction1.toString();
+			transaction2_string = transaction2.toString();
+	
+			var sha256 = new jsSHA('SHA3-256', 'TEXT');
+			sha256.update(transaction1_string);
+			transaction1_hash = sha256.getHash("HEX");
+		
+			var sha256 = new jsSHA('SHA3-256', 'TEXT');
+			sha256.update(transaction2_string);
+			transaction2_hash = sha256.getHash("HEX");
+			if (transaction1_hash = transaction2_hash) {
+				counterpartyAB1.push(transaction1);
+				counterpartyAB2.push(transaction2);
+}
+}
+
+				ending_Time = Date.now();
+
+				counterpartyAB1_string = counterpartyAB1.toString();		    
+				var sha256 = new jsSHA('SHA3-256', 'TEXT');
+				sha256.update(counterpartyAB1_string);
+				counterpartyAB1_hash = sha256.getHash("HEX");
+
+
+				counterpartyAB2_string = counterpartyAB2.toString();
+				var sha256 = new jsSHA('SHA3-256', 'TEXT');
+				sha256.update(counterpartyAB2_string);
+				counterpartyAB2_hash = sha256.getHash("HEX");
+				
+			    tableInsertRow("counterparty");		
+
+				var elapsedTime =  ending_Time - beginning_Time;
+				var transactions = Math.floor(1000/(elapsedTime/1000));
+				elapsed_time =  +transactions*100+" transactions per second(tps) for a 100 member network = "+transactions+" tps between each counterparty. The tables show the immutable record of the transactions created and distributed to party A and party B. Scroll to continue.";
+				$("#elapsed-time").text(elapsed_time);
+
+
+		}
+	}
+	
+	function summation() {
+		
+		//create CounterpartyAB_Sum array
+		counterpartyAB_Sum = {
+				  "AAPL"    : parseInt(0),
+				  "GOOGL"	: parseInt(0),
+				  "IBM"	    : parseInt(0),
+				  "SAP"	    : parseInt(0),
+				  "USD"	    : parseInt(0),
+				  "EUR"	    : parseInt(0),
+				  "GBP"	    : parseInt(0)
+		}
+		for (i=0; i < counterpartyAB1.length; i++) { 
+			//Get the summation of Assets AAPL,GOOGL,IBM,SAP
+			if(counterpartyAB1[i][1] == "AAPL")
+			{
+				counterpartyAB_Sum.AAPL = counterpartyAB_Sum.AAPL + counterpartyAB1[i][0];
+			}
+			else if(counterpartyAB1[i][1] == "GOOGL")
+			{
+				counterpartyAB_Sum.GOOGL = counterpartyAB_Sum.GOOGL + counterpartyAB1[i][0];
+			}
+			else if(counterpartyAB1[i][1] == "SAP")
+			{
+				counterpartyAB_Sum.SAP = counterpartyAB_Sum.SAP + counterpartyAB1[i][0];
+			}
+			else if(counterpartyAB1[i][1] == "IBM")
+			{
+				counterpartyAB_Sum.IBM = counterpartyAB_Sum.IBM + counterpartyAB1[i][0];
+			}
+			
+			//Get the summation of Currency USD,EUR,GBP
+			if(counterpartyAB1[i][3] == "USD")
+			{
+				counterpartyAB_Sum.USD = counterpartyAB_Sum.USD + counterpartyAB1[i][2];
+			}
+			else if(counterpartyAB1[i][3] == "EUR")
+			{
+				counterpartyAB_Sum.EUR = counterpartyAB_Sum.EUR + counterpartyAB1[i][2];
+			}
+			else if(counterpartyAB1[i][3] == "GBP")
+			{
+				counterpartyAB_Sum.GBP = counterpartyAB_Sum.GBP + counterpartyAB1[i][2];
+			}
+		}
+		
+		tableInsertRow("summation");
+	}
+	
+	function prime_ledger(){
+		PrimeLedger = {
+			"AAPL"    : (counterpartyAB_Sum.AAPL + counterPartyAC.AAPL + counterPartyAD.AAPL),
+			"GOOGL"	  : (counterpartyAB_Sum.GOOGL + counterPartyAC.GOOGL + counterPartyAD.GOOGL),
+			"IBM"	  : (counterpartyAB_Sum.IBM + counterPartyAC.IBM + counterPartyAD.IBM),
+			"SAP"	  : (counterpartyAB_Sum.SAP + counterPartyAC.SAP + counterPartyAD.SAP),
+			"USD"	  : (counterpartyAB_Sum.USD + counterPartyAC.USD + counterPartyAD.USD),
+			"EUR"	  : (counterpartyAB_Sum.EUR + counterPartyAC.EUR + counterPartyAD.EUR),
+			"GBP"	  : (counterpartyAB_Sum.GBP + counterPartyAC.GBP + counterPartyAD.GBP)
+		}
+		tableInsertRow("prime_ledger")
+	}
+	
+	function tableInsertRow(source) {
+		if(source == "counterparty"){
+			$("#transaction-a").text("");
+			$("#transaction-b").text("");
+			for(i=0; i < counterpartyAB1.length ; i++){
+				var table = document.getElementById("transaction-a");
+		        var row = table.insertRow(0);
+			    var cell1 = row.insertCell(0);
+			    var cell2 = row.insertCell(1);
+			    var cell3 = row.insertCell(2);
+			    var cell4 = row.insertCell(3);
+			    var cell5 = row.insertCell(4);
+			    cell1.innerHTML = counterpartyAB1[i][0];
+			    cell2.innerHTML = counterpartyAB1[i][1];
+			    cell3.innerHTML = counterpartyAB1[i][2];
+			    cell4.innerHTML = counterpartyAB1[i][3];
+			    cell5.innerHTML = counterpartyAB1[i][4];
+		    }
+			
+			for(i=0; i < counterpartyAB2.length ; i++){
+				var table = document.getElementById("transaction-b");
+		        var row = table.insertRow(0);
+			    var cell1 = row.insertCell(0);
+			    var cell2 = row.insertCell(1);
+			    var cell3 = row.insertCell(2);
+			    var cell4 = row.insertCell(3);
+			    var cell5 = row.insertCell(4);
+			    cell1.innerHTML = counterpartyAB2[i][0];
+			    cell2.innerHTML = counterpartyAB2[i][1];
+			    cell3.innerHTML = counterpartyAB2[i][2];
+			    cell4.innerHTML = counterpartyAB2[i][3];
+			    cell5.innerHTML = counterpartyAB2[i][4];
+		    }
+		}
+		
+		if(source == "summation"){
+			$("#summation_screen").text("");
+			for (var key in counterpartyAB_Sum) {
+				var table = document.getElementById("summation_screen");
+				if(counterpartyAB_Sum[key] != 0){
+					var row = table.insertRow(0);
+					var cell1 = row.insertCell(0);
+					var cell2 = row.insertCell(1);
+					cell1.innerHTML = counterpartyAB_Sum[key];
+					cell2.innerHTML = key;	
+				}
+			}
+		}
+		
+		if(source == "prime_ledger"){
+			$("#prime-ledger-screen").text("");
+			for (var key in PrimeLedger) {
+				var table = document.getElementById("prime-ledger-screen");
+				if(PrimeLedger[key] != 0){
+					var row = table.insertRow(0);
+					var cell1 = row.insertCell(0);
+					var cell2 = row.insertCell(1);
+					cell1.innerHTML = PrimeLedger[key];
+					cell2.innerHTML = key;	
+				}
+			}
+		}
+	}
+	
+	function tableDeleteRow() {
+		counterpartyAB1.pop();
+		counterpartyAB2.pop();
+	}
+	
+	function redirecctHome(){
+		$("#f1-asset").prop('selectedIndex', 0);
+		$("#home-container").show()
+		$("#f1-total-value").val("")
+		$("#f1-quantity").val("")
+		$("#f1-asset").prop('selectedIndex', 0);
+		$("#f1-currency").prop('selectedIndex', 0);
+		$(".f1-step").attr('class', 'f1-step');
+		$(".f1-progress-line").css({"width":"16.66%"});
+		
+	}	
+</script>
+
+<body>
+
+	<!-- Top menu -->
+	<nav class="navbar navbar-inverse navbar-no-bg" role="navigation">
+		<div class="container">
+			<!-- Collect the nav links, forms, and other content for toggling -->
+			<div class="collapse navbar-collapse" id="top-navbar-1">
+				<ul class="nav navbar-nav navbar-right">
+				 <a href="index.html" target="_blank">DisLedger Home</a>
+				</ul>
+			</div>
+		</div>
+	</nav>
+
+
+	<!-- Top content -->
+	<div class="top-content">
+		<div class="container">
+
+			<div class="row">
+				<div class="col-sm-10 col-sm-offset-1 text">
+  
+					<h1><font color="black">
+						DisLedger&reg; - Distributed Concurrence Ledger 
+					</h1>
+					<div class="description">
+						<p>Enter a cash equities transaction between parties A and B (referred to as A:B). DisLedger processes the transaction privately between the two counterparties. The throughput of the system scales directly with the number of counterparties one interacts with so the speed of one transaction and the overall throughput of a 100 member network will be shown. This version runs in javascript within your browser, but even in this form it is very fast. To replicate a real world load on the system the code produces 1,000 transactions adding 1 to the quantity each time. Copyright &copy; 2017 DisLedger Ltd. patent pending</p>
+</font>
+					</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-sm-12 col-md-12 col-lg-10 col-lg-offset-1 form-box">
+					<form role="form" action="Demo1.html" method="post" class="f1">
+
+						<div class="f1-steps">
+							<div class="f1-progress">
+								<div class="f1-progress-line" data-now-value="16.66"
+									data-number-of-steps="3" style="width: 16.66%;"></div>
+							</div>
+							<div class="f1-step active" id="data-entry-menu">
+								<div class="f1-step-icon">
+									<i class="fa fa-user"></i>
+								</div>
+								<p>Data Entry</p>
+							</div>
+							<div class="f1-step">
+								<div class="f1-step-icon">
+									<i class="fa fa-briefcase"></i>
+								</div>
+								<p>Counterparty Ledger</p>
+							</div>
+							<div class="f1-step">
+								<div class="f1-step-icon">
+									<i class="fa fa-area-chart"></i>
+								</div>
+								<p>Balance</p>
+							</div>
+							<div class="f1-step">
+								<div class="f1-step-icon">
+									<i class="fa fa-briefcase"></i>
+								</div>
+								<p>Prime Ledger</p>
+							</div>
+
+						</div>
+
+						<fieldset class="container1" id="home-container">
+							<h4>Enter a cash equity transaction and 1,000 transactions will be generated. </h4>
+
+							<div class="row">
+								<div class="col-xs-12 col-sm-6 col-md-6">
+									<div class="form-group btn-group btn-group-custom"
+										data-toggle="buttons" id="buy-sell-element">
+										<label class="btn btn-primary active"> <input
+											type="radio" name="buy-sell" class="buy-sell-radio"
+											value="Buy" checked> Buy
+										</label> <label class="btn btn-primary"> <input type="radio"
+											name="buy-sell" class="buy-sell-radio" value="Sell">
+											Sell
+										</label>
+									</div>
+
+								</div>
+								<div class="col-xs-12 col-sm-6 col-md-6">
+									<div class="form-group">
+										<select class="form-control" name="f1-asset"
+											class="f1-asset form-control" id="f1-asset">
+											<option hidden value="0">Equity</option>
+											<option value="1">AAPL</option>
+											<option value="2">GOOGL</option>
+											<option value="3">IBM</option>
+											<option value="4">SAP</option>
+										</select>
+									</div>
+								</div>
+
+							</div>
+							<div class="row">
+
+								<div class="col-xs-12 col-sm-6 col-md-6">
+									<div class="form-group">
+										<select class="form-control" name="f1-currency"
+											class="f1-currency form-control" id="f1-currency">
+											<option hidden value="0">Currency Type</option>
+											<option value="1">USD</option>
+											<option value="2">EUR</option>
+											<option value="3">GBP</option>
+										</select>
+									</div>
+
+								</div>
+								<div class="col-xs-12 col-sm-6 col-md-6">
+									<div class="form-group">
+										<label class="sr-only" for="f1-quantity">Quantity</label> <input
+											type="number" name="f1-quantity" placeholder="Number of Shares..."
+											class="f1-quantity form-control" id="f1-quantity">
+									</div>
+								</div>
+							</div>
+
+							<div class="form-group">
+								<label class="sr-only" for="f1-total-value">Total Value</label>
+								<input type="number" name="f1-total-value"
+									placeholder="Total Transaction Value..."
+									class="f1-total-value form-control" id="f1-total-value">
+							</div>
+
+							<div class="f1-buttons">
+								<button type="button" class="btn btn-next"
+									onClick="process_data_entry()">Submit</button>
+							</div>
+						</fieldset>
+
+						<fieldset class="counterparty-ledger container1">
+							<h4 id="elapsed-time"></h4>
+							<div class="span6 first-child">
+								<div class="table-responsive">
+									<table class="table">
+										</thead>
+										<tr class="table-name table-header">
+											<th>A</th>
+										</tr>
+										<tr class="table-header">
+											<th>Quantity</th>
+											<th>Asset</th>
+											<th>Total Value</th>
+											<th>Currency</th>
+											<th>Hash</th>
+										</tr>
+										</thead>
+										<tbody class="table-body" id="transaction-a">
+
+										</tbody>
+									</table>
+								</div>
+							</div>
+							<div class="span6">
+								<div class="table-responsive">
+									<table class="table">
+										</thead>
+										<tr class="table-name table-header">
+											<th>B</th>
+										</tr>
+										<tr class="table-header">
+											<th>Quantity</th>
+											<th>Asset</th>
+											<th>Total Value</th>
+											<th>Currency</th>
+											<th>Hash</th>
+										</tr>
+										</thead>
+										<tbody class="table-body" id="transaction-b">
+
+										</tbody>
+									</table>
+								</div>
+							</div>
+							<div class="f1-buttons">
+								<button type="button" class="btn btn-previous"
+									onClick="tableDeleteRow()">Previous</button>
+								<button type="button" class="btn btn-next" onClick="summation()">Next</button>
+							</div>
+						</fieldset>
+
+						<fieldset class="counterparty-ledger summation container1">
+							<h4 class="center-txt">The Net Balance for all the transactions between counterparties A and B during this session
+							</h4>
+							<div class="table-responsive">
+								<table class="table">
+									</thead>
+									<tr class="table-header">
+										<th>Value</th>
+										<th>Name</th>
+									</tr>
+									</thead>
+									<tbody class="table-body" id="summation_screen">
+
+									</tbody>
+								</table>
+							</div>
+							<div class="f1-buttons">
+								<button type="button" class="btn btn-previous">Previous</button>
+								<button type="button" class="btn btn-next"
+									onClick="prime_ledger()">Next</button>
+							</div>
+						</fieldset>
+
+						<fieldset class="counterparty-ledger prime-ledger container1">
+							<h4 class="center-txt">The Prime Ledger for organization A showing the realtime balance of all of A's assets. This table includes data from other counterparty ledgers for A:C and A:D stored in the demo. In production the Prime Ledger will contain all of the asset balances from every counterparty with whom A interacts.</h4>
+							<div class="table-responsive">
+								<table class="table">
+									</thead>
+									<tr class="table-header">
+										<th>Summation</th>
+										<th>Asset</th>
+									</tr>
+									</thead>
+									<tbody class="table-body" id="prime-ledger-screen">
+									</tbody>
+								</table>
+							</div>
+							<div class="f1-buttons">
+								<button type="button" class="btn btn-previous">Previous</button>
+								<button type="button" class="btn btn-next"
+									onClick="redirecctHome()">Add another set of transactions</button>
+							</div>
+						</fieldset>
+
+
+
+					</form>
+				</div>
+			</div>
+
+		</div>
+	</div>
+
+
+	<!-- Javascript -->
+	<script src="assets/js/jquery-1.11.1.min.js"></script>
+	<script src="assets/bootstrap/js/bootstrap.min.js"></script>
+	<script src="assets/js/jquery.backstretch.min.js"></script>
+	<script src="assets/js/retina-1.1.0.min.js"></script>
+	<script src="assets/js/scripts.js"></script>
+
+	<!--[if lt IE 10]>
+            <script src="assets/js/placeholder.js"></script>
+        <![endif]-->
+
+</body>
+
+</html>
+
